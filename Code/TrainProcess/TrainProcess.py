@@ -69,7 +69,7 @@ def trainProcess(modelName):
         result = model.probs
         saver = model.saver()
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=result, labels=y_labels))
-        optimizer = tf.train.AdadeltaOptimizer().minimize(loss)
+        optimizer = tf.train.AdadeltaOptimizer()
         x_trainSet, y_trainSet, x_testSet, y_testSet = split_dataset(imagelist,labellist,fold)
         image_batch, label_batch = get_batch(x_trainSet,y_trainSet,IMG_WIDTH,IMG_HEIGHT,batch_size=BATCH_SIZE,capcity=32)
         loss_list = []
@@ -97,12 +97,12 @@ def trainProcess(modelName):
                             loss_file.write("%s the loss is %f\n" %(currentTimeStamp, loss_record))
                             loss_list.append(loss_record)
                             epoch_loss_list.append(loss_record)
-                            # if batchCounter != 0 and batchCounter % 50 == 0:
+                            if batchCounter != 0 and batchCounter % 50 == 0:
                             #     ModelSaver(ModelSavePath = epochModelSavepath,sess = sess,saver = saver,global_step = batchCounter)
-                            #     lossPainter(lossPicSavepath = epochModelSavepath,loss=epoch_loss_list)
+                                lossPainter(lossPicSavepath = epochModelSavepath,loss=epoch_loss_list)
                     print("epoch %d end training" % (epoch+1))
                     #ModelSaver(ModelSavePath=epochModelSavepath, sess=sess, saver=saver, global_step=batchCounter)
-                    #lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list)
+                    lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list)
                     acc = getAccuracy(sess, model=model, test_img_list=x_testSet, test_label_list=y_testSet)
                     acc_list.append(acc)
                     loss_file.write("now the epoch %d's accuracy is %f\n" % (epoch, acc))

@@ -13,7 +13,9 @@ class VGG16 (Model):
         self.parameters = []
         self.convlayers()
         self.fc_layers()
-        self.probs = tf.nn.softmax(self.fc8)
+        self.probs1 = tf.nn.softmax(self.sibling1_fc8)
+        self.probs2 = tf.nn.softmax(self.sibling2_fc8)
+        self.probs = tf.concat(self.probs1,self.probs2)
     def conv_op(self,input_op,name,kh,kw,n_out,dh,dw):
         n_in = input_op.get_shape()[-1]
         with tf.name_scope(name) as scope:
@@ -88,6 +90,7 @@ class VGG16 (Model):
         self.fc6_drop = tf.nn.dropout(self.fc6,keep_prob=self.keep_prob,name = "fc6_drop")
         self.fc7 = self.fc_op(input_op=self.fc6_drop,name = "fc7",n_out = 1024)
         self.fc7_drop = tf.nn.dropout(self.fc7,keep_prob=self.keep_prob,name = "fc7_drop")
-        self.fc8 = self.fc_op(input_op=self.fc7_drop,name="fc7",n_out = 4)
+        self.sibling1_fc8 = self.fc_op(input_op=self.fc7_drop,name="fc7",n_out = 2)
+        self.sibling2_fc8 = self.fc_op(input_op=self.fc7_drop,name="fc7",n_out = 2)
     def saver(self):
         return tf.train.Saver()

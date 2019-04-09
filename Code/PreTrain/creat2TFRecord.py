@@ -15,11 +15,13 @@ def get_file(file_dir):
     labels = []
     for one_folder in temp:
         n_img = len(os.listdir(one_folder))
-        letter = one_folder.split("\\")[-1]
+        letter = one_folder.split("/")[-1]
         if letter == "blot":
             labels = np.append(labels,n_img * [1])
         elif letter == "nut":
             labels = np.append(labels,n_img * [2])
+        elif letter == "blotandnut":
+            labels = np.append(labels, n_img * [3])
         else:
             labels = np.append(labels,n_img * [0])
     # shuffle
@@ -30,7 +32,6 @@ def get_file(file_dir):
     label_list = list(temp[:, 1])
     label_list = [int(float(i)) for i in label_list]
     return image_list, label_list
-
 
 def get_batch(image_list, label_list, img_width, img_height, batch_size, capcity):
     image = tf.cast(image_list, tf.string)

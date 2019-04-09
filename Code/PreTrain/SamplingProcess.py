@@ -1,11 +1,11 @@
 import os
 import random
 import xml
-from ConstValue.global_variable import IMG_WIDTH,IMG_HEIGHT
+from ConstValue.global_variable import IMG_WIDTH, IMG_HEIGHT, SAMPLE_PATH
 import cv2
 from PreTrain.labelParser import LabelParserHandler
 
-class preTrainProcess:
+class SamplingProcess:
     def __init__(self,file,mergeFlag = False):
         self.file = file
         self.annotationfile = self.__mapToAnnotation()
@@ -13,6 +13,17 @@ class preTrainProcess:
         self.labelRegion = self.__getGroundTruthArear(mergeFlag)
         self.image = cv2.imread(self.file)
         self.sampleSavePath = self.__getSampleSavePath()
+        self.__creatSamplePath(SAMPLE_PATH)
+
+    #创建路径
+    def __creatSamplePath(self,samplePath):
+        for item in self.labelRegion:
+            storePath = os.path.join(samplePath,item+"/")
+            if not os.path.exists(storePath):
+                os.mkdir(storePath)
+        storePath = os.path.join(samplePath,"background/")
+        if not os.path.exists(storePath):
+            os.mkdir(storePath)
 
     # 采样存储路径
     def __getSampleSavePath(self):
@@ -24,13 +35,13 @@ class preTrainProcess:
     def __mapToAnnotation(self):
         path = os.path.dirname(self.file)
         path =os.path.dirname(path)
-        filename = self.file.split("\\")[-1]
+        filename = self.file.split("/")[-1]
         attionationFilename = filename.split(".")[0] + ".xml"
         return os.path.join(path,"annotation",attionationFilename);
 
     # #对图片进行采样获取训练的样本，由于目前nut数据太少不在进行nut数据采样
     def sampling(self,ratio,sampleNums):
-        filename = self.file.split("\\")[-1].split(".")[0]
+        filename = self.file.split("/")[-1].split(".")[0]
         #计算采样数
         posGoal = sampleNums * ratio
         negGoal = sampleNums - posGoal
@@ -38,7 +49,6 @@ class preTrainProcess:
         sampleCounter = {}
         for labelname in self.labelRegion:
             sampleCounter[labelname] = 0
-        sampleFlag = True
         size = self.image.shape
         while(backgroundSampleNum < negGoal):
             storeFlag = True
@@ -46,19 +56,16 @@ class preTrainProcess:
             TransferFlag = random.choice([True, False])
             y1 = random.randint(0, size[0]-IMG_HEIGHT)
             x1 = random.randint(0, size[1]-IMG_WIDTH)
-            print()
             x2 = x1+IMG_WIDTH
             y2 = y1+IMG_HEIGHT
             coordinate = ([y1,x1],[y2,x2])
             # 获取采样标记
-            sign,crossrate = self.__getSampleSign(coordinate)
+            sign = self.__getSampleSign(coordinate)
             if "again" == sign:
                 continue
             elif "background"==sign :
                 backgroundSampleNum += 1
                 storeIndex = backgroundSampleNum
-                print("The background %d's corssRate is %f the cooridnate is [(%d,%d),(%d,%d)]"
-                      %(storeIndex,crossrate,x1,y1,x2,y2))
             else:
                 sampleCounter[sign] += 1
                 storeIndex = sampleCounter[sign]
@@ -93,10 +100,22 @@ class preTrainProcess:
         minx = cooridnate["xmin"]
         miny = cooridnate["ymin"]
         try:
-            startX = max(0,maxx - IMG_WIDTH)
-            Starty = max(0, maxy - IMG_HEIGHT)
-            x1 = random.randint(startX, minx)
-            y1 = random.randint(Starty, miny)
+            x = max(0,maxx - IMG_WIDTH)
+            y = max(0, maxy - IMG_HEIGHT)
+            if x > minx:
+                startx = minx
+                endx = x
+            else:
+                startx = x
+                endx = minx
+            if y > miny:
+                starty = miny
+                endy = y
+            else:
+                starty = y
+                endy = miny
+            x1 = random.randint(startx, endx)
+            y1 = random.randint(starty, endy)
         except Exception:
             raise Exception("Sampling Size setting Error")
         x2 = x1 + IMG_WIDTH
@@ -106,15 +125,13 @@ class preTrainProcess:
 
     # 获取标记位置处的图片
     def getTestImg(self):
-        blotImgList = []
-        nutImgList = []
-        for item in self.blot:
-            img = self.__getOrientalPositionSample(item)
-            blotImgList.append(img)
-        for item in self.nut:
-            img = self.__getOrientalPositionSample(item)
-            nutImgList.append(img)
-        return blotImgList,nutImgList
+        imgList = {}
+        for item in self.labelRegion:
+            imgList[item] = []
+            for labelRec in self.labelRegion[item]:
+                img = self.__getOrientalPositionSample(labelRec)
+                imgList[item].append(img)
+        return imgList
 
     # #获取图片的标注信息
 
@@ -167,10 +184,10 @@ class preTrainProcess:
                 # #计算交叠比率，若大于0.7则采样结果为螺栓 0.4~0.7重新采样 0.4以下为背景图片
                 crossRate = self.__caculCrossRate(coordinate, item)
                 if crossRate >= 0.7:
-                    return categoryInfo,crossRate
+                    return categoryInfo
                 elif 0.4 <= crossRate < 0.7:
-                    return "again",crossRate
-        return "background",crossRate
+                    return "again"
+        return "background"
 
     # 获取blots 和nuts 标签位置
     def __getGroundTruthArear(self,mergeFlag):

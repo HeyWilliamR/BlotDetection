@@ -13,9 +13,9 @@ import cv2
 
 
 def getSavePath(savePath, modelName, fold, epoch):
-    epochSavePath = os.path.join(savePath,modelName, "fold_" + str(fold), "epoch_" + str(epoch) + "\\")
-    foldSavePath = os.path.join(savePath,modelName, "fold_" + str(fold) + "\\")
-    modelPath = os.path.join(savePath,modelName+"\\")
+    epochSavePath = os.path.join(savePath,modelName, "fold_" + str(fold), "epoch_" + str(epoch) + "/")
+    foldSavePath = os.path.join(savePath,modelName, "fold_" + str(fold) + "/")
+    modelPath = os.path.join(savePath,modelName+"/")
     if not os.path.exists(modelPath):
         os.mkdir(modelPath)
     if not os.path.exists(foldSavePath):
@@ -98,10 +98,10 @@ def trainProcess(modelName):
                             loss_list.append(loss_record)
                             epoch_loss_list.append(loss_record)
                             if batchCounter != 0 and batchCounter % 50 == 0:
-                            #     ModelSaver(ModelSavePath = epochModelSavepath,sess = sess,saver = saver,global_step = batchCounter)
+                                ModelSaver(ModelSavePath = epochModelSavepath,sess = sess,saver = saver,global_step = batchCounter)
                                 lossPainter(lossPicSavepath = epochModelSavepath,loss=epoch_loss_list)
                     print("epoch %d end training" % (epoch+1))
-                    #ModelSaver(ModelSavePath=epochModelSavepath, sess=sess, saver=saver, global_step=batchCounter)
+                    ModelSaver(ModelSavePath=epochModelSavepath, sess=sess, saver=saver, global_step=batchCounter)
                     lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list)
                     acc = getAccuracy(sess, model=model, test_img_list=x_testSet, test_label_list=y_testSet)
                     acc_list.append(acc)

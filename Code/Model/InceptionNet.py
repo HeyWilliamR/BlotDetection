@@ -1,3 +1,4 @@
+#coding=utf-8
 from datetime import datetime
 import math
 import time
@@ -17,7 +18,8 @@ def inception_v3_arg_scope(weight_decay = 0.0004,stddev = 0.1,batch_norm_var_col
                                                  'moving_std':[batch_norm_var_collection],
                                                 }
                         }
-    with slim.arg_scope([slim.conv2d,slim.fully_connected],weights_regularizer = slim.l2_regularizer(weight_decay)):
+    with slim.arg_scope([slim.conv2d,slim.fully_connected]
+            ,weights_regularizer = slim.l2_regularizer(weight_decay)):
         with slim.arg_scope(
             [slim.conv2d],weights_initializer = tf.truncated_normal_initializer(stddev=stddev),
             activation_fn = tf.nn.relu,

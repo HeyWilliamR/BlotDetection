@@ -1,3 +1,4 @@
+#coding=utf-8
 import tensorflow as tf
 import numpy as np
 import os
@@ -18,10 +19,8 @@ def get_file(file_dir):
         letter = one_folder.split("/")[-1]
         if letter == "blot":
             labels = np.append(labels,n_img * [1])
-        elif letter == "nut":
-            labels = np.append(labels,n_img * [2])
         elif letter == "blotandnut":
-            labels = np.append(labels, n_img * [3])
+            labels = np.append(labels, n_img * [1])
         else:
             labels = np.append(labels,n_img * [0])
     # shuffle

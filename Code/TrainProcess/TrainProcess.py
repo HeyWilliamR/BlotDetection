@@ -1,14 +1,22 @@
-import sys
 
+#coding=utf-8
+import sys
+sys.path.append("/home/xhsu/llg/BlotDetection/Code/")
+sys.path.append("/home/xhsu/llg/BlotDetection/Code/PreTrain/")
+sys.path.append("/home/xhsu/llg/BlotDetection/Code/Model/")
+sys.path.append("/home/xhsu/llg/BlotDetection/Code/ConstValue/")
 from creat2TFRecord import *
 from global_variable import *
 import tensorflow as tf
 from VGG16 import VGG16
 import VGG16 as model
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import time
 from PreTrain.creat2TFRecord import *
 import cv2
+
 
 
 
@@ -38,19 +46,18 @@ def getAccuracy(sess,model,test_img_list,test_label_list):
 
 def ModelSaver(ModelSavePath,sess,saver,global_step):
     saver.save(sess, save_path=ModelSavePath, global_step = global_step)
-def lossPainter(lossPicSavepath,loss):
+def lossPainter(lossPicSavepath,loss,batch_counter):
     plt.plot(loss)
     plt.xlabel("iter")
     plt.ylabel("loss")
     plt.tight_layout()
-    plt.savefig(lossPicSavepath + "loss.jpg")
+    plt.savefig(lossPicSavepath +"batch_"+ str(batch_counter)+ "_loss.jpg")
     plt.close()
 def creatModel(ModelName,x_imgs):
     # 创建模型
     model = ""
     if ModelName == "VGG16":
         model = VGG16(x_imgs)
-
     elif ModelName == "ResNet":
         pass
     elif ModelName == "InceptionNet":
@@ -60,7 +67,7 @@ def creatModel(ModelName,x_imgs):
     return model
 def trainProcess(modelName):
     x_imgs = tf.placeholder(tf.float32,shape = [None,IMG_WIDTH,IMG_HEIGHT,3])
-    y_labels = tf.placeholder(tf.int32,shape = [None,3])
+    y_labels = tf.placeholder(tf.int32,shape = [None,2])
     batch_total = caculTotalBatch(SAMPLE_PATH,batchnum=BATCH_SIZE)
     imagelist, labellist = get_file(SAMPLE_PATH)
     for fold in range(FOLD_VALUE):
@@ -69,7 +76,7 @@ def trainProcess(modelName):
         result = model.probs
         saver = model.saver()
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=result, labels=y_labels))
-        optimizer = tf.train.AdadeltaOptimizer().minimize(loss)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(loss)
         x_trainSet, y_trainSet, x_testSet, y_testSet = split_dataset(imagelist,labellist,fold)
         image_batch, label_batch = get_batch(x_trainSet,y_trainSet,IMG_WIDTH,IMG_HEIGHT,batch_size=BATCH_SIZE,capcity=32)
         loss_list = []
@@ -92,17 +99,17 @@ def trainProcess(modelName):
                             sess.run(optimizer, feed_dict={x_imgs: image_batch_v, y_labels: labels})
                             loss_record = sess.run(loss, feed_dict={x_imgs: image_batch_v, y_labels: labels})
                             endtime = time.time()
-                            print("batch %d cost time : %d ms"%(batchCounter+1,endtime-starttime))
+                            print("batch %d cost time : %d ms loss is %f"%(batchCounter+1,endtime-starttime,loss_record))
                             currentTimeStamp = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                             loss_file.write("%s the loss is %f\n" %(currentTimeStamp, loss_record))
                             loss_list.append(loss_record)
                             epoch_loss_list.append(loss_record)
                             if batchCounter != 0 and batchCounter % 50 == 0:
                                 ModelSaver(ModelSavePath = epochModelSavepath,sess = sess,saver = saver,global_step = batchCounter)
-                                lossPainter(lossPicSavepath = epochModelSavepath,loss=epoch_loss_list)
+                                lossPainter(lossPicSavepath = epochModelSavepath,loss=epoch_loss_list,batch_counter=batchCounter)
                     print("epoch %d end training" % (epoch+1))
                     ModelSaver(ModelSavePath=epochModelSavepath, sess=sess, saver=saver, global_step=batchCounter)
-                    lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list)
+                    lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list,batch_counter = batchCounter)
                     acc = getAccuracy(sess, model=model, test_img_list=x_testSet, test_label_list=y_testSet)
                     acc_list.append(acc)
                     loss_file.write("now the epoch %d's accuracy is %f\n" % (epoch, acc))
@@ -113,7 +120,7 @@ def trainProcess(modelName):
             finally:
                 coord.request_stop()
                 ModelSaver(ModelSavePath=epochModelSavepath, sess=sess, saver=saver, global_step=batchCounter)
-                lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list)
+                lossPainter(lossPicSavepath=epochModelSavepath, loss=epoch_loss_list,batch_counter=batchCounter)
             coord.join(threads)
         lossPainter(lossPicSavepath=flodModelSavepath,loss= loss_list)
     accfile = open(os.path.join(modelSavePath,"accuracy.txt"),"w")

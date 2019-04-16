@@ -1,20 +1,6 @@
-
-#coding=utf-8
-import sys
-sys.path.append("/home/xhsu/llg/BlotDetection/Code/")
-sys.path.append("/home/xhsu/llg/BlotDetection/Code/PreTrain/")
-sys.path.append("/home/xhsu/llg/BlotDetection/Code/Model/")
-sys.path.append("/home/xhsu/llg/BlotDetection/Code/ConstValue/")
-from creat2TFRecord import *
-from global_variable import *
-
-
-import time
-from PreTrain.creat2TFRecord import *
 from preTrain import *
-
-
-
+import tensorflow as tf
+from PreTrain.creat2TFRecord import  *
 def trainProcess(modelName):
     x_imgs = tf.placeholder(tf.float32,shape = [None,IMG_WIDTH,IMG_HEIGHT,3])
     y_labels = tf.placeholder(tf.int32,shape = [None,2])
@@ -77,5 +63,3 @@ def trainProcess(modelName):
     accavg = np.average(acc_list)
     accfile.write("average accuracy is %f "%accavg)
     accfile.close()
-if __name__ =="__main__":
-    trainProcess("VGG16")

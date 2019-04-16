@@ -20,7 +20,9 @@ def get_file(file_dir):
         if letter == "blot":
             labels = np.append(labels,n_img * [1])
         elif letter == "blotandnut":
-            labels = np.append(labels, n_img * [1])
+            labels = np.append(labels, n_img * [3])
+        elif letter == "nut":
+            labels = np.append(labels,n_img * [2])
         else:
             labels = np.append(labels,n_img * [0])
     # shuffle

@@ -6,4 +6,4 @@ for root,subdir,files in os.walk(DATA_PATH):
     for file in files:
         print(file +" is sampling")
         sample = SamplingProcess(os.path.join(root, file))
-        sample.sampling(0.5,256)
+        sample.sampling(0.5,16)
